@@ -1,0 +1,27 @@
+{
+  "name": "xterm-wasm-parts",
+  "version": "0.1.0",
+  "description": "Temporary project for xterm wasm parts.",
+  "main": "./lib/index.js",
+  "repository": "https://github.com/jerch/xterm-wasm-parts",
+  "author": "Joerg Breitbart <j.breitbart@netzkolchose.de>",
+  "license": "MIT",
+  "scripts": {
+    "test": "mocha lib/**/*.test.js",
+    "start": "npm run package && http-server",
+    "build": "tsc -p . && inwasm 'lib/**/*.wasm.js'",
+    "benchmark": "xterm-benchmark lib/**/*.benchmark.js",
+    "prepackage": "npm run build",
+    "prepublishOnly": "npm run package"
+  },
+  "devDependencies": {
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^20.5.4",
+    "mocha": "^9.2",
+    "typescript": "^5.1.6",
+    "xterm-benchmark": "^0.3.1"
+  },
+  "dependencies": {
+    "inwasm": "^0.0.13"
+  }
+}

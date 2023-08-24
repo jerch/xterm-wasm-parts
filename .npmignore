@@ -1,0 +1,8 @@
+*
+
+# whitelist entry and wasm modules with type definition and bundles
+!lib/index.js
+!lib/index.d.ts
+!lib/**/*.wasm.d.ts
+!lib/**/*.wasm.js
+!dist/*
