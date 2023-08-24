@@ -11,7 +11,7 @@
     "start": "npm run package && http-server",
     "build": "tsc -p . && inwasm 'lib/**/*.wasm.js'",
     "benchmark": "xterm-benchmark lib/**/*.benchmark.js",
-    "prepackage": "npm run build",
+    "package": "npm run build",
     "prepublishOnly": "npm run package"
   },
   "devDependencies": {
