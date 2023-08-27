@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import Base64Decoder from './Base64Decoder.wasm';
+import Base64Encoder from './Base64Encoder.wasm';
 
 // eslint-disable-next-line
 declare const Buffer: any;
@@ -33,7 +34,7 @@ const MAP = new Uint8Array(
 
 describe('Base64Decoder', () => {
   describe('decoding', () => {
-    it('single bytes', function() {
+    it('single bytes', function () {
       this.timeout(20000);
       const dec = new Base64Decoder(0);
       for (let i = 0; i < 256; ++i) {
@@ -46,7 +47,7 @@ describe('Base64Decoder', () => {
       }
     });
     for (let a = 0; a < 256; ++a) {
-      it(`1+2 bytes (${a})`, function() {
+      it(`1+2 bytes (${a})`, function () {
         const dec = new Base64Decoder(0);
         for (let b = 0; b < 256; ++b) {
           dec.init(2);
@@ -59,7 +60,7 @@ describe('Base64Decoder', () => {
       });
     }
     for (let a = 0; a < 256; ++a) {
-      it(`2+3 bytes (${a})`, function() {
+      it(`2+3 bytes (${a})`, function () {
         const dec = new Base64Decoder(0);
         for (let b = 0; b < 256; ++b) {
           dec.init(3);
@@ -72,7 +73,7 @@ describe('Base64Decoder', () => {
       });
     }
     for (let a = 0; a < 256; ++a) {
-      it(`3+4 bytes (${a})`, function() {
+      it(`3+4 bytes (${a})`, function () {
         const dec = new Base64Decoder(0);
         for (let b = 0; b < 256; ++b) {
           dec.init(4);
@@ -108,7 +109,7 @@ describe('Base64Decoder', () => {
         assert.deepEqual(dec.data8, d.slice(0, i + 1));
       }
     });
-    it('exit on false byte', function() {
+    it('exit on false byte', function () {
       this.timeout(20000);
       const dec = new Base64Decoder(0);
       for (let pos = 0; pos < 8; ++pos) {
@@ -155,5 +156,78 @@ describe('Base64Decoder', () => {
       assert.strictEqual((dec as any)._mem, null);
       //assert.isNull((dec as any)._mem);
     });
+  });
+});
+
+
+describe('Base64Encoder', () => {
+  it('1-byte and padding', () => {
+    const enc = new Base64Encoder(65536);
+    for (let a = 0; a < 256; ++a) {
+      const data = [a];
+      const r1 = Buffer.from(enc.encode(new Uint8Array(data))).toString();
+      const r2 = Buffer.from(data).toString('base64');
+      assert.strictEqual(r1, r2);
+    }
+  });
+  it('2-bytes and padding', () => {
+    const enc = new Base64Encoder(65536);
+    for (let a = 0; a < 256; ++a) {
+      for (let b = 0; b < 256; ++b) {
+        const data = [a, b];
+        const r1 = Buffer.from(enc.encode(new Uint8Array(data))).toString();
+        const r2 = Buffer.from(data).toString('base64');
+        assert.strictEqual(r1, r2);
+      }
+    }
+  });
+  describe('3-byte blocks (full block range)', () => {
+    const enc = new Base64Encoder(65536);
+    for (let a = 0; a < 256; ++a) {
+      it(`[${a}, b, c]`, () => {
+        for (let b = 0; b < 256; ++b) {
+          for (let c = 0; c < 256; ++c) {
+            const data = [c, b, a];
+            const r1 = Buffer.from(enc.encode(new Uint8Array(data))).toString();
+            const r2 = Buffer.from(data).toString('base64');
+            assert.strictEqual(r1, r2);
+          }
+        }
+      });
+    }
+  });
+  it('4-bytes (1 block + 1 byte)', () => {
+    const enc = new Base64Encoder(65536);
+    const DATA = [
+      [0, 0, 0, 0],
+      [1, 2, 3, 4],
+      [255, 0, 0, 0],
+      [0, 255, 0, 0],
+      [0, 0, 255, 0],
+      [0, 0, 0, 255],
+      [255, 255, 255, 255]
+    ];
+    for (const data of DATA) {
+      const r1 = Buffer.from(enc.encode(new Uint8Array(data))).toString();
+      const r2 = Buffer.from(data).toString('base64');
+      assert.strictEqual(r1, r2);
+    }
+  });
+  it('13-bytes (4 blocks + 1 byte)', () => {
+    const enc = new Base64Encoder(65536);
+    const DATA = [
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255]
+    ];
+    for (const data of DATA) {
+      const r1 = Buffer.from(enc.encode(new Uint8Array(data))).toString();
+      const r2 = Buffer.from(data).toString('base64');
+      assert.strictEqual(r1, r2);
+    }
   });
 });
