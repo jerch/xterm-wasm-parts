@@ -2,7 +2,7 @@
  * Copyright (c) 2023 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { InWasm, IWasmInstance, OutputMode, OutputType, ExtractDefinition } from 'inwasm';
+import { InWasm, OutputMode, OutputType } from 'inwasm';
 
 const enum P8 {
   LUT_P = 1024,
@@ -88,7 +88,7 @@ const wasmEncode = InWasm({
     `
 });
 
-type B64Encode = ExtractDefinition<ReturnType<typeof wasmEncode>>;
+type WasmEncodeType = ReturnType<typeof wasmEncode>;
 
 // base64 map
 const MAP = new Uint8Array(
@@ -117,7 +117,7 @@ for (let i = 0; i < MAP.length; ++i) {
  * roughly doubling the throughput compared to a simple scalar implementation.
  */
 export default class Base64Encoder {
-  private _inst!: IWasmInstance<B64Encode>;
+  private _inst!: WasmEncodeType;
   private _mem!: WebAssembly.Memory;
   private _d!: Uint8Array;
 

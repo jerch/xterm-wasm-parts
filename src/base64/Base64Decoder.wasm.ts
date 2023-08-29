@@ -252,8 +252,7 @@ const wasmDecode = InWasm({
 // });
 
 // FIXME: currently broken in inwasm
-type ExtractDefinition<Type> = Type extends () => IWasmInstance<infer X> ? X : never;
-type DecodeDefinition = ExtractDefinition<typeof wasmDecode>;
+type WasmDecodeType = ReturnType<typeof wasmDecode>;
 
 // base64 map
 const MAP = new Uint8Array(
@@ -286,7 +285,7 @@ const EMPTY = new Uint8Array(0);
 export default class Base64Decoder {
   private _d!: Uint8Array;
   private _m32!: Uint32Array;
-  private _inst!: IWasmInstance<DecodeDefinition>;
+  private _inst!: WasmDecodeType;
   private _mem!: WebAssembly.Memory;
 
   constructor(public keepSize: number) {}
