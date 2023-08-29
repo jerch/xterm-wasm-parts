@@ -52,28 +52,28 @@ perfContext('Base64 - decode', () => {
   perfContext('Base64Decoder', () => {
     new ThroughputRuntimeCase('256', () => {
       dec.init(192);
-      dec.put(b256, 0, b256.length);
+      dec.put(b256);
       dec.end();
       return { payloadSize: b256.length };
     }, { repeat: RUNS }).showAverageThroughput();
 
     new ThroughputRuntimeCase('4096', () => {
       dec.init(3072);
-      dec.put(b4096, 0, b4096.length);
+      dec.put(b4096);
       dec.end();
       return { payloadSize: b4096.length };
     }, { repeat: RUNS }).showAverageThroughput();
 
     new ThroughputRuntimeCase('65536', () => {
       dec.init(49152);
-      dec.put(b65536, 0, b65536.length);
+      dec.put(b65536);
       dec.end();
       return { payloadSize: b65536.length };
     }, { repeat: RUNS }).showAverageThroughput();
 
     new ThroughputRuntimeCase('1048576', () => {
       dec.init(786432);
-      dec.put(b1M, 0, b1M.length);
+      dec.put(b1M);
       dec.end();
       return { payloadSize: b1M.length };
     }, { repeat: RUNS }).showAverageThroughput();

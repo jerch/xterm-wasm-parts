@@ -2,7 +2,7 @@
  * Copyright (c) 2023 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { InWasm, IWasmInstance, OutputMode, OutputType } from 'inwasm';
+import { InWasm, OutputMode, OutputType } from 'inwasm';
 
 
 // memory addresses in uint32
@@ -16,7 +16,6 @@ const enum P32 {
   STATE_SP = 1281,
   STATE_DP = 1282,
   STATE_ESIZE = 1283,
-  STATE_BSIZE = 1284,
   STATE_DATA = 1288   // 16 aligned
 }
 
@@ -44,8 +43,7 @@ const wasmDecode = InWasm({
       unsigned int sp;
       unsigned int dp;
       unsigned int e_size;
-      unsigned int b_size;
-      unsigned int dummy[3];
+      unsigned int dummy[4];
       unsigned char data[0];
     } State;
 
@@ -80,20 +78,24 @@ const wasmDecode = InWasm({
       if (rem < 2) return 1;
 
       unsigned char *src = state->data + state->sp;
+      if (rem == 4) {
+        if (src[3] == 61) rem--;
+        if (src[2] == 61) rem--;
+      }
       unsigned int accu = D0[src[0]] | D1[src[1]];
       int dp = 1;
-      if (rem > 2 && src[2] != 61) {
+      if (rem > 2) {
         accu |= D2[src[2]];
         dp++;
-      }
-      if (rem == 4 && src[3] != 61) {
-        accu |= D3[src[3]];
-        dp++;
+        if (rem == 4) {
+          accu |= D3[src[3]];
+          dp++;
+        }
       }
       if (accu >> 24) return 1;
       *((unsigned int *) (state->data + state->dp)) = accu;
       state->dp += dp;
-      return state->dp != state->b_size;
+      return 0;
     }
     `
 });
@@ -335,7 +337,6 @@ export default class Base64Decoder {
       m = new Uint32Array(this._mem.buffer, 0);
       this._d = new Uint8Array(this._mem.buffer, P32.STATE_DATA * 4);
     }
-    m[P32.STATE_BSIZE] = size;
     m[P32.STATE_ESIZE] = Math.ceil(size / 3) * 4;
     m[P32.STATE_WP] = 0;
     m[P32.STATE_SP] = 0;
@@ -348,12 +349,12 @@ export default class Base64Decoder {
    * Also decodes base64 data inplace once the payload exceeds 2^17 bytes.
    * Returns 1 on error, else 0.
    */
-  public put(data: Uint8Array | Uint16Array | Uint32Array, start: number, end: number): number {
+  public put(data: Uint8Array | Uint16Array | Uint32Array): number {
     if (!this._inst) return 1;
     const m = this._m32;
-    if (end - start + m[P32.STATE_WP] > m[P32.STATE_ESIZE]) return 1;
-    this._d.set(data.subarray(start, end), m[P32.STATE_WP]);
-    m[P32.STATE_WP] += end - start;
+    if (data.length + m[P32.STATE_WP] > m[P32.STATE_ESIZE]) return 1;
+    this._d.set(data, m[P32.STATE_WP]);
+    m[P32.STATE_WP] += data.length;
     // max chunk in input handler is 2^17, try to run in "tandem mode"
     // also assures that we dont run into illegal offsets in the wasm part
     return m[P32.STATE_WP] - m[P32.STATE_SP] >= 131072 ? this._inst.exports.dec() : 0;
@@ -361,8 +362,7 @@ export default class Base64Decoder {
 
   /**
    * End the current decoding.
-   * Decodes leftover payload and finally checks for the correct amount of
-   * decoded bytes by comparing to the value given to `init`.
+   * Also decodes leftover payload from previous put calls.
    * Returns 1 on error, else 0.
    */
   public end(): number {
