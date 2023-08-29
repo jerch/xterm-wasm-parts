@@ -24,7 +24,7 @@ const wasmEncode = InWasm({
     switches: ['-Wl,-z,stack-size=0', '-Wl,--stack-first']
   },
   code: `
-    static unsigned char PAD = '=';
+    static unsigned short PAD = 0x3D3D; // ==
     unsigned short *LUT = (unsigned short *) ${P8.LUT_P};
 
     void* enc(unsigned char *src, int length) {
@@ -68,19 +68,14 @@ const wasmEncode = InWasm({
       }
 
       if (pad == 2) {
-        accu = src[0] << 8 | src[1];
-        accu <<= 2;
-        *dst++ = LUT[accu >> 12] >> 8;
-        *dst++ = LUT[(accu >> 6) & 0x3F] >> 8;
-        *dst++ = LUT[accu & 0x3F] >> 8;
-        *dst++ = PAD;
+        accu = src[0] << 10 | src[1] << 2;
+        *((unsigned short *) dst) = LUT[ accu >> 6 ];
+        *((unsigned short *) (dst+2)) = PAD & 0xFF00 | LUT[accu & 0x3F] >> 8;
+        dst += 4;
       } else if (pad == 1) {
-        accu = src[0];
-        accu <<= 4;
-        *dst++ = LUT[accu >> 6] >> 8;
-        *dst++ = LUT[accu & 0x3F] >> 8;
-        *dst++ = PAD;
-        *dst++ = PAD;
+        *((unsigned short *) dst) = LUT[ src[0] << 4 ];
+        *((unsigned short *) (dst+2)) = PAD;
+        dst += 4;
       }
 
       return dst;
