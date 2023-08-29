@@ -58,14 +58,28 @@ const wasmDecode = InWasm({
       unsigned char *src = state->data + state->sp;
       unsigned char *end = state->data + nsp;
       unsigned char *dst = state->data + state->dp;
-      unsigned int accu;
+      unsigned int error = 0;
 
+      // 4x loop unrolling (~30% speedup)
+      unsigned char *end16 = state->data + (nsp & ~15);
+      while (src < end16) {
+        error |= *((unsigned int *)  dst   ) = D0[src[ 0]] | D1[src[ 1]] | D2[src[ 2]] | D3[src[ 3]];
+        error |= *((unsigned int *) (dst+3)) = D0[src[ 4]] | D1[src[ 5]] | D2[src[ 6]] | D3[src[ 7]];
+        error |= *((unsigned int *) (dst+6)) = D0[src[ 8]] | D1[src[ 9]] | D2[src[10]] | D3[src[11]];
+        error |= *((unsigned int *) (dst+9)) = D0[src[12]] | D1[src[13]] | D2[src[14]] | D3[src[15]];
+        dst += 12;
+        src += 16;
+      }
+
+      // operate on 4-byte blocks
       while (src < end) {
-        if ((accu = D0[src[0]] | D1[src[1]] | D2[src[2]] | D3[src[3]]) >> 24) return 1;
-        *((unsigned int *) dst) = accu;
+        error |= *((unsigned int *) dst) = D0[src[0]] | D1[src[1]] | D2[src[2]] | D3[src[3]];
         dst += 3;
         src += 4;
       }
+
+      // eval error state lazy (opportunistic, favors good over bad data)
+      if (error >> 24) return 1;
       state->sp = nsp;
       state->dp = dst - state->data;
       return 0;
