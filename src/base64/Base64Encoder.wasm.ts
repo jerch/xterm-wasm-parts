@@ -2,7 +2,7 @@
  * Copyright (c) 2023 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { InWasm, IWasmInstance, OutputMode, OutputType, ExtractDefinition } from 'inwasm';
+import { InWasm, OutputMode, OutputType } from 'inwasm';
 
 const enum P8 {
   LUT_P = 1024,
@@ -24,20 +24,17 @@ const wasmEncode = InWasm({
     switches: ['-Wl,-z,stack-size=0', '-Wl,--stack-first']
   },
   code: `
-    static unsigned char PAD = '=';
+    static unsigned short PAD = 0x3D3D; // ==
     unsigned short *LUT = (unsigned short *) ${P8.LUT_P};
 
     void* enc(unsigned char *src, int length) {
       unsigned char *dst = (unsigned char *) ${P8.DST_P};
 
-      int pad = length % 3;
-      length -= pad;
-
-      unsigned char *src_end3 = src + length;
+      unsigned char *src_end3 = src + length - 2;
       unsigned int accu;
 
       // 4x loop unrolling (~25% speedup)
-      unsigned char *src_end12 = src_end3 - 12;
+      unsigned char *src_end12 = src + length - 11;
       while (src < src_end12) {
         accu = src[0] << 16 | src[1] << 8 | src[2];
         *((unsigned short *) dst) = LUT[ accu >> 12 ];
@@ -59,6 +56,7 @@ const wasmEncode = InWasm({
         dst += 16;
       }
 
+      // operate in 3-byte blocks
       while (src < src_end3) {
         accu = src[0] << 16 | src[1] << 8 | src[2];
         *((unsigned short *) dst) = LUT[ accu >> 12 ];
@@ -67,20 +65,17 @@ const wasmEncode = InWasm({
         dst += 4;
       }
 
+      // tail handling with padding
+      int pad = src_end3 + 2 - src;
       if (pad == 2) {
-        accu = src[0] << 8 | src[1];
-        accu <<= 2;
-        *dst++ = LUT[accu >> 12] >> 8;
-        *dst++ = LUT[(accu >> 6) & 0x3F] >> 8;
-        *dst++ = LUT[accu & 0x3F] >> 8;
-        *dst++ = PAD;
+        accu = src[0] << 10 | src[1] << 2;
+        *((unsigned short *) dst) = LUT[ accu >> 6 ];
+        *((unsigned short *) (dst+2)) = PAD & 0xFF00 | LUT[accu & 0x3F] >> 8;
+        dst += 4;
       } else if (pad == 1) {
-        accu = src[0];
-        accu <<= 4;
-        *dst++ = LUT[accu >> 6] >> 8;
-        *dst++ = LUT[accu & 0x3F] >> 8;
-        *dst++ = PAD;
-        *dst++ = PAD;
+        *((unsigned short *) dst) = LUT[ src[0] << 4 ];
+        *((unsigned short *) (dst+2)) = PAD;
+        dst += 4;
       }
 
       return dst;
@@ -88,7 +83,7 @@ const wasmEncode = InWasm({
     `
 });
 
-type B64Encode = ExtractDefinition<ReturnType<typeof wasmEncode>>;
+type WasmEncodeType = ReturnType<typeof wasmEncode>;
 
 // base64 map
 const MAP = new Uint8Array(
@@ -117,7 +112,7 @@ for (let i = 0; i < MAP.length; ++i) {
  * roughly doubling the throughput compared to a simple scalar implementation.
  */
 export default class Base64Encoder {
-  private _inst!: IWasmInstance<B64Encode>;
+  private _inst!: WasmEncodeType;
   private _mem!: WebAssembly.Memory;
   private _d!: Uint8Array;
 

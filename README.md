@@ -11,9 +11,10 @@ in your source code (example showing base64 decoder):
 ```typescript
 import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 const b64Decoder = new Base64Decoder(123);   // keep memory if below 123 bytes
+...
 b64Decoder.init(3);                          // init decoder for 3 bytes (pulls wasm instance)
 const data = new Uint8Array([65,65,65,65]);
-b64Decoder.put(data, 0, 4);                  // == AAAA == \x00\x00\x00 decoded
+b64Decoder.put(data);                        // == AAAA == \x00\x00\x00 decoded
 b64Decoder.end();                            // end of chunk inputs
 b64Decoder.data8;                            // --> Uint8Array(3) [ 0, 0, 0 ] == \x00\x00\x00
 b64Decoder.release();                        // release memory if 123 exceeded

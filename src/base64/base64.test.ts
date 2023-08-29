@@ -41,7 +41,7 @@ describe('Base64Decoder', () => {
         dec.init(1);
         const inp = new Uint8Array([i]);
         const data = fromBs(encNative(inp));
-        assert.strictEqual(dec.put(data, 0, data.length), 0);
+        assert.strictEqual(dec.put(data), 0);
         assert.strictEqual(dec.end(), 0);
         assert.deepEqual(dec.data8, inp);
       }
@@ -53,7 +53,7 @@ describe('Base64Decoder', () => {
           dec.init(2);
           const inp = new Uint8Array([a, b]);
           const data = fromBs(encNative(inp));
-          assert.strictEqual(dec.put(data, 0, data.length), 0);
+          assert.strictEqual(dec.put(data), 0);
           assert.strictEqual(dec.end(), 0);
           assert.deepEqual(dec.data8, inp);
         }
@@ -66,7 +66,7 @@ describe('Base64Decoder', () => {
           dec.init(3);
           const inp = new Uint8Array([0, a, b]);
           const data = fromBs(encNative(inp));
-          assert.strictEqual(dec.put(data, 0, data.length), 0);
+          assert.strictEqual(dec.put(data), 0);
           assert.strictEqual(dec.end(), 0);
           assert.deepEqual(dec.data8, inp);
         }
@@ -79,7 +79,7 @@ describe('Base64Decoder', () => {
           dec.init(4);
           const inp = new Uint8Array([0, 0, a, b]);
           const data = fromBs(encNative(inp));
-          assert.strictEqual(dec.put(data, 0, data.length), 0);
+          assert.strictEqual(dec.put(data), 0);
           assert.strictEqual(dec.end(), 0);
           assert.deepEqual(dec.data8, inp);
         }
@@ -98,13 +98,13 @@ describe('Base64Decoder', () => {
         // with padding
         dec.init(i + 1);
         let enc = fromBs(encData[i]);
-        assert.strictEqual(dec.put(enc, 0, enc.length), 0);
+        assert.strictEqual(dec.put(enc), 0);
         assert.strictEqual(dec.end(), 0);
         assert.deepEqual(dec.data8, d.slice(0, i + 1));
         // w'o padding
         dec.init(i + 1);
         enc = fromBs(encDataTrimmed[i]);
-        assert.strictEqual(dec.put(enc, 0, enc.length), 0);
+        assert.strictEqual(dec.put(enc), 0);
         assert.strictEqual(dec.end(), 0);
         assert.deepEqual(dec.data8, d.slice(0, i + 1));
       }
@@ -118,8 +118,8 @@ describe('Base64Decoder', () => {
           dec.release();
           dec.init(6);
           inp[pos] = i;
-          dec.put(inp, 0, 8);
-          assert.strictEqual(dec.end(), MAP.includes(i) ? 0 : 1);
+          // note: explicitly allow '=' in last position
+          assert.strictEqual(dec.put(inp) || dec.end(), MAP.includes(i) || (pos === 7 && i == 61) ? 0 : 1);
         }
       }
     });
@@ -128,33 +128,30 @@ describe('Base64Decoder', () => {
     it('always release (keepSize 0)', () => {
       const dec = new Base64Decoder(0);
       dec.init(16);
-      dec.put(fromBs('A'.repeat(16)), 0, 16);
+      dec.put(fromBs('A'.repeat(16)));
       dec.end();
       assert.strictEqual(dec.data8.length, 12);
       dec.release();
       assert.strictEqual(dec.data8.length, 0);
       assert.strictEqual((dec as any)._mem, null);
-      //assert.isNull((dec as any)._mem);
     });
     it('keep 1 page (keepSize 65536)', () => {
       const dec = new Base64Decoder(65536);
       dec.init(384);
-      dec.put(fromBs('A'.repeat(512)), 0, 512);
+      dec.put(fromBs('A'.repeat(512)));
       dec.end();
       assert.strictEqual(dec.data8.length, 384);
       dec.release();
       assert.strictEqual(dec.data8.length, 0);
       assert.notStrictEqual((dec as any)._mem, null);
-      //assert.isNotNull((dec as any)._mem);
       // grow to 2 pages + free afterwards
       dec.init(65536);
-      dec.put(fromBs('A'.repeat(65536)), 0, 65536);
+      dec.put(fromBs('A'.repeat(65536)));
       dec.end();
       assert.strictEqual(dec.data8.length, 49152);
       dec.release();
       assert.strictEqual(dec.data8.length, 0);
       assert.strictEqual((dec as any)._mem, null);
-      //assert.isNull((dec as any)._mem);
     });
   });
 });
