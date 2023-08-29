@@ -30,14 +30,11 @@ const wasmEncode = InWasm({
     void* enc(unsigned char *src, int length) {
       unsigned char *dst = (unsigned char *) ${P8.DST_P};
 
-      int pad = length % 3;
-      length -= pad;
-
-      unsigned char *src_end3 = src + length;
+      unsigned char *src_end3 = src + length - 2;
       unsigned int accu;
 
       // 4x loop unrolling (~25% speedup)
-      unsigned char *src_end12 = src_end3 - 12;
+      unsigned char *src_end12 = src + length - 11;
       while (src < src_end12) {
         accu = src[0] << 16 | src[1] << 8 | src[2];
         *((unsigned short *) dst) = LUT[ accu >> 12 ];
@@ -59,6 +56,7 @@ const wasmEncode = InWasm({
         dst += 16;
       }
 
+      // operate in 3-byte blocks
       while (src < src_end3) {
         accu = src[0] << 16 | src[1] << 8 | src[2];
         *((unsigned short *) dst) = LUT[ accu >> 12 ];
@@ -67,6 +65,8 @@ const wasmEncode = InWasm({
         dst += 4;
       }
 
+      // tail handling with padding
+      int pad = src_end3 + 2 - src;
       if (pad == 2) {
         accu = src[0] << 10 | src[1] << 2;
         *((unsigned short *) dst) = LUT[ accu >> 6 ];
