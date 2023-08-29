@@ -329,7 +329,7 @@ export default class Base64Decoder {
   /**
    * Initializes the decoder for new base64 data.
    * Must be called before doing any decoding attempts.
-   * `size` is the amount of decoded bytes to be expected.
+   * `size` is the max amount of decoded bytes to be expected.
    * The method will either spawn a new wasm instance or grow
    * the needed memory of an existing instance.
    */
@@ -355,8 +355,8 @@ export default class Base64Decoder {
   }
 
   /**
-   * Put bytes in `data` from `start` to `end` (exclusive) into the decoder.
-   * Also decodes base64 data inplace once the payload exceeds 2^17 bytes.
+   * Put bytes in `data` into the decoder.
+   * Additionally decodes the payload, if it reached 2^17 bytes.
    * Returns 1 on error, else 0.
    */
   public put(data: Uint8Array | Uint16Array | Uint32Array): number {
