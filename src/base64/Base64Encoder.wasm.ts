@@ -83,6 +83,102 @@ const wasmEncode = InWasm({
     `
 });
 
+// SIMD version (speedup ~1.6x, not covered by tests yet)
+/*
+const wasmEncode = InWasm({
+  name: 'encode',
+  type: OutputType.INSTANCE,
+  mode: OutputMode.SYNC,
+  srctype: 'Clang-C',
+  imports: {
+    env: { memory: new WebAssembly.Memory({ initial: 1 }) }
+  },
+  exports: {
+    enc: (src: number, length: number) => 0
+  },
+  compile: {
+    switches: ['-msimd128', '-Wl,-z,stack-size=0', '-Wl,--stack-first']
+  },
+  code: `
+    #include <wasm_simd128.h>
+
+    static __inline__ v128_t _mm_mulhi_epu16(v128_t __a, v128_t __b)
+    {
+      const v128_t lo = wasm_u32x4_extmul_low_u16x8(__a, __b);
+      const v128_t hi = wasm_u32x4_extmul_high_u16x8(__a, __b);
+      return wasm_i16x8_shuffle(lo, hi, 1, 3, 5, 7, 9, 11, 13, 15);
+    }
+
+    static unsigned short PAD = 0x3D3D; // ==
+    unsigned short *LUT = (unsigned short *) ${P8.LUT_P};
+
+    void* enc(unsigned char *src, int length) {
+      unsigned char *dst = (unsigned char *) ${P8.DST_P};
+
+      unsigned char *src_end3 = src + length - 2;
+      unsigned int accu;
+
+      unsigned char *src_end12 = src + length - 15;
+      while (src < src_end12) {
+        v128_t v1 = wasm_v128_load((v128_t *) src);
+
+        // unpack
+        v128_t v2 = wasm_i8x16_swizzle(v1, wasm_i8x16_const(1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10));
+        v128_t index_a = wasm_v128_and(wasm_u32x4_shr(v2, 10), wasm_i32x4_splat(0x0000003f));
+        v128_t index_b = wasm_v128_and(wasm_i32x4_shl(v2, 4),  wasm_i32x4_splat(0x00003f00));
+        v128_t index_c = wasm_v128_and(wasm_u32x4_shr(v2, 6),  wasm_i32x4_splat(0x003f0000));
+        v128_t index_d = wasm_v128_and(wasm_i32x4_shl(v2, 8),  wasm_i32x4_splat(0x3f000000));
+        v128_t a_b = wasm_v128_or(index_a, index_b);
+        v128_t c_d = wasm_v128_or(index_c, index_d);
+        v128_t indices = wasm_v128_or(a_b, c_d);
+
+        // lookup with pshufb improved variant
+        // see http://0x80.pl/notesen/2016-01-12-sse-base64-encoding.html#sse-version
+        v128_t result = wasm_u8x16_sub_sat(indices, wasm_i8x16_splat(51));
+        const v128_t less = wasm_i8x16_gt(wasm_i8x16_splat(26), indices);
+        result = wasm_v128_or(result, wasm_v128_and(less, wasm_i8x16_splat(13)));
+        const v128_t shift_LUT = wasm_i8x16_const(
+            'a' - 26, '0' - 52, '0' - 52, '0' - 52,
+            '0' - 52, '0' - 52, '0' - 52, '0' - 52,
+            '0' - 52, '0' - 52, '0' - 52, '+' - 62,
+            '/' - 63,      'A',        0,        0
+        );
+        result = wasm_i8x16_swizzle(shift_LUT, result);
+        result = wasm_i8x16_add(result, indices);
+
+        wasm_v128_store((v128_t *) dst, result);
+        src += 12;
+        dst += 16;
+      }
+
+      // operate in 3-byte blocks
+      while (src < src_end3) {
+        accu = src[0] << 16 | src[1] << 8 | src[2];
+        *((unsigned short *) dst) = LUT[ accu >> 12 ];
+        *((unsigned short *) (dst+2)) = LUT[ accu & 0xFFF ];
+        src += 3;
+        dst += 4;
+      }
+
+      // tail handling with padding
+      int pad = src_end3 + 2 - src;
+      if (pad == 2) {
+        accu = src[0] << 10 | src[1] << 2;
+        *((unsigned short *) dst) = LUT[ accu >> 6 ];
+        *((unsigned short *) (dst+2)) = PAD & 0xFF00 | LUT[accu & 0x3F] >> 8;
+        dst += 4;
+      } else if (pad == 1) {
+        *((unsigned short *) dst) = LUT[ src[0] << 4 ];
+        *((unsigned short *) (dst+2)) = PAD;
+        dst += 4;
+      }
+
+      return dst;
+    }
+    `
+});
+*/
+
 type WasmEncodeType = ReturnType<typeof wasmEncode>;
 
 // base64 map

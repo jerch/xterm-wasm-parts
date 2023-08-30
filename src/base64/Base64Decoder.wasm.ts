@@ -22,6 +22,7 @@ const enum P32 {
 /**
  * wasm base64 decoder.
  */
+
 const wasmDecode = InWasm({
   name: 'decode',
   type: OutputType.INSTANCE,
@@ -114,7 +115,7 @@ const wasmDecode = InWasm({
     `
 });
 
-// SIMD version (~35% faster) - commented out for now due to missing Safari support
+// SIMD version (speedup ~1.4x, not covered by tests yet)
 /*
 const wasmDecode = InWasm({
   name: 'decode',
@@ -169,14 +170,14 @@ const wasmDecode = InWasm({
         const char linv = 1;
         const char hinv = 0;
 
-        const v128_t lower_bound_LUT = wasm_i8x16_make(
+        const v128_t lower_bound_LUT = wasm_i8x16_const(
           // order: 0 1 2 3 4 5 6 7 8 9 a b c d e f
           linv, linv, 0x2b, 0x30,
           0x41, 0x50, 0x61, 0x70,
           linv, linv, linv, linv,
           linv, linv, linv, linv
         );
-        const v128_t upper_bound_LUT = wasm_i8x16_make(
+        const v128_t upper_bound_LUT = wasm_i8x16_const(
           // order: 0 1 2 3 4 5 6 7 8 9 a b c d e f
           hinv, hinv, 0x2b, 0x39,
           0x4f, 0x5a, 0x6f, 0x7a,
@@ -184,7 +185,7 @@ const wasmDecode = InWasm({
           hinv, hinv, hinv, hinv
         );
         // the difference between the shift and lower bound
-        const v128_t shift_LUT = wasm_i8x16_make(
+        const v128_t shift_LUT = wasm_i8x16_const(
           // order: 0 1 2 3 4 5 6 7 8 9 a b c d e f
           0x00,        0x00,        0x3e - 0x2b, 0x34 - 0x30,
           0x00 - 0x41, 0x0f - 0x50, 0x1a - 0x61, 0x29 - 0x70,
@@ -219,7 +220,8 @@ const wasmDecode = InWasm({
         dst += 12;
         src += 16;
       }
-      if (wasm_i8x16_bitmask(err) != 0) return 1;
+      //if (wasm_i8x16_bitmask(err) != 0) return 1;
+      if (wasm_v128_any_true(err)) return 1;
 
       // operate on 4-byte blocks
       while (src < end) {
