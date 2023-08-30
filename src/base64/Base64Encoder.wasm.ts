@@ -102,13 +102,6 @@ const wasmEncode = InWasm({
   code: `
     #include <wasm_simd128.h>
 
-    static __inline__ v128_t _mm_mulhi_epu16(v128_t __a, v128_t __b)
-    {
-      const v128_t lo = wasm_u32x4_extmul_low_u16x8(__a, __b);
-      const v128_t hi = wasm_u32x4_extmul_high_u16x8(__a, __b);
-      return wasm_i16x8_shuffle(lo, hi, 1, 3, 5, 7, 9, 11, 13, 15);
-    }
-
     static unsigned short PAD = 0x3D3D; // ==
     unsigned short *LUT = (unsigned short *) ${P8.LUT_P};
 
