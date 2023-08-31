@@ -12,6 +12,8 @@
     "build": "tsc -p . && inwasm 'lib/**/*.wasm.js'",
     "watch": "tsc -w & inwasm -w 'lib/**/*.wasm.js' & wait",
     "benchmark": "xterm-benchmark lib/**/*.benchmark.js",
+    "clean": "rm -rf lib inwasm-builds",
+    "inwasm": "inwasm 'lib/**/*.wasm.js'",
     "package": "npm run build",
     "prepublishOnly": "npm run package"
   },
