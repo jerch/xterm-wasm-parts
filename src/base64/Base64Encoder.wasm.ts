@@ -172,7 +172,6 @@ const wasmEncode = InWasm({
 });
 */
 
-type WasmEncodeType = ReturnType<typeof wasmEncode>;
 
 // base64 map
 const MAP = new Uint8Array(
@@ -201,7 +200,7 @@ for (let i = 0; i < MAP.length; ++i) {
  * roughly doubling the throughput compared to a simple scalar implementation.
  */
 export default class Base64Encoder {
-  private _inst!: WasmEncodeType;
+  private _inst!: ReturnType<typeof wasmEncode>;
   private _mem!: WebAssembly.Memory;
   private _d!: Uint8Array;
 

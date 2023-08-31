@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2023 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
 import * as assert from 'assert';
 import Base64Decoder from './Base64Decoder.wasm';
 import Base64Encoder from './Base64Encoder.wasm';
