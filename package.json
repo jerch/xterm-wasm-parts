@@ -1,6 +1,6 @@
 {
   "name": "xterm-wasm-parts",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Temporary project for xterm wasm parts.",
   "main": "./lib/index.js",
   "repository": "https://github.com/jerch/xterm-wasm-parts",

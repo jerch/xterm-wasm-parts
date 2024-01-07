@@ -62,7 +62,12 @@ const wasmDecode = InWasm({
       unsigned int error = 0;
 
       // 4x loop unrolling (~30% speedup)
-      unsigned char *end16 = state->data + (nsp & ~15);
+      // FIXME: investigate why zeroing the last bits of nsp does not always work here
+      //        a temp fix is the line below, which always subtracts 16 from the end pointer
+      //        this has a tiny penalty of always doing the last portion in 4-bytes, -16 is safe,
+      //        as it is further guarded by the big chunk clause in Base64Decoder.put
+      //unsigned char *end16 = state->data + (nsp & ~15);
+      unsigned char *end16 = state->data + nsp - 16;
       while (src < end16) {
         error |= *((unsigned int *)  dst   ) = D0[src[ 0]] | D1[src[ 1]] | D2[src[ 2]] | D3[src[ 3]];
         error |= *((unsigned int *) (dst+3)) = D0[src[ 4]] | D1[src[ 5]] | D2[src[ 6]] | D3[src[ 7]];
