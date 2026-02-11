@@ -7,6 +7,9 @@ import { InWasm, OutputMode, OutputType } from 'inwasm-runtime';
 
 /**
  * Decoder return values.
+ * Issue: Currently esbuild cannot pull const enum values from
+ *        upstream packages, thus changing these values needs
+ *        changes on downstream side as well.
  */
 export const enum DecodeStatus {
   /**
@@ -15,7 +18,7 @@ export const enum DecodeStatus {
   OK = 0,
   /**
    * Error during base64 decoding.
-   * Most likely caused by malformed byte64 data.
+   * Most likely caused by malformed base64 data.
    */
   DECODE_ERROR = -1,
   /**
