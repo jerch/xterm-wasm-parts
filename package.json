@@ -1,6 +1,6 @@
 {
   "name": "xterm-wasm-parts",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Temporary project for xterm wasm parts.",
   "main": "./lib/index.js",
   "repository": "https://github.com/jerch/xterm-wasm-parts",
@@ -18,13 +18,14 @@
     "prepublishOnly": "npm run package"
   },
   "devDependencies": {
-    "@types/mocha": "^9.1.1",
-    "@types/node": "^20.5.4",
-    "mocha": "^9.2",
-    "typescript": "^5.1.6",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^24",
+    "inwasm": "^0.1.2",
+    "mocha": "^11.7.5",
+    "typescript": "^5.9.3",
     "xterm-benchmark": "^0.3.1"
   },
   "dependencies": {
-    "inwasm": "^0.0.13"
+    "inwasm-runtime": "^0.1.2"
   }
 }

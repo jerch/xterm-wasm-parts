@@ -2,7 +2,7 @@
  * Copyright (c) 2023 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { InWasm, OutputMode, OutputType } from 'inwasm';
+import { InWasm, OutputMode, OutputType } from 'inwasm-runtime';
 
 const enum P8 {
   LUT_P = 1024,
