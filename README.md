@@ -1,6 +1,15 @@
 ## xterm-wasm-parts
 
-Project to hold wasm sources used in xterm.js. The npm package contains only the final wasm definitions and type declarations, and can be used like this:
+Project to hold wasm sources used in xterm.js.
+
+
+Currently the following primitives are built:
+- base64 decoder & encoder
+- QOI image format decoder & encoder
+
+
+The npm package contains only the final wasm definitions and type declarations
+and can be used like this (example for base64 decoder):
 
 ```bash
 $> yarn add -D xterm-wasm-parts
@@ -23,4 +32,4 @@ b64Decoder.init();                           // init decoder for next data to be
 
 ```
 
-Note that the wasm files are compiled as CJS, currently they will not work in TS projects set to ESM module output.
+Note that the wasm files are compiled as CJS.

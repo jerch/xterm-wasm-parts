@@ -202,7 +202,7 @@ for (let i = 0; i < MAP.length; ++i) {
 export default class Base64Encoder {
   private _inst!: ReturnType<typeof wasmEncode>;
   private _mem!: WebAssembly.Memory;
-  private _d!: Uint8Array;
+  private _d!: Uint8Array<ArrayBuffer>;
 
   constructor(public keepSize: number) {}
 
@@ -210,7 +210,7 @@ export default class Base64Encoder {
    * Encode bytes in `d` as base64.
    * Returns encoded byte array (borrowed).
    */
-  public encode(d: Uint8Array): Uint8Array {
+  public encode(d: Uint8Array): Uint8Array<ArrayBuffer> {
     const bytes = Math.ceil(d.length * 1.4) + P8.DST_P;
     if (!this._inst) {
       this._mem = new WebAssembly.Memory({ initial: Math.ceil(bytes / 65536) });

@@ -2,7 +2,7 @@
  * Copyright (c) 2023 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { InWasm, OutputMode, OutputType } from 'inwasm';
+import { InWasm, OutputMode, OutputType } from 'inwasm-runtime';
 
 const enum P8 {
   DST_P = 1024
@@ -100,13 +100,13 @@ const wasmQoiDecode = InWasm({
 export default class QoiDecoder {
   private _inst!: ReturnType<typeof wasmQoiDecode>;
   private _mem!: WebAssembly.Memory;
-  private _d!: Uint8Array;
+  private _d!: Uint8Array<ArrayBuffer> ;
   public width = 0;
   public height = 0;
 
   constructor(public keepSize: number) {}
 
-  public decode(d: Uint8Array): Uint8Array {
+  public decode(d: Uint8Array): Uint8Array<ArrayBuffer> {
     this.width = d[4] << 24 | d[5] << 16 | d[6] << 8 | d[7];
     this.height = d[8] << 24 | d[9] << 16 | d[10] << 8 | d[11];
     const pixels = this.width * this.height;
