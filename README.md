@@ -9,10 +9,10 @@ Currently the following primitives are built:
 
 
 The npm package contains only the final wasm definitions and type declarations
-and can be used like this (example for base64 decoder):
+and can be used like this:
 
 ```bash
-$> yarn add -D xterm-wasm-parts
+$> npm i --save-dev xterm-wasm-parts
 ```
 
 in your source code (example showing base64 decoder):
